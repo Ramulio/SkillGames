@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from "react";
 
-// stile caselle uniforme
-const boxStyle =
-  "flex items-center justify-center text-3xl font-bold rounded-xl p-6 w-48 h-24 bg-gray-200 shadow";
+// Simple styles
+const cardStyle =
+  "flex items-center justify-center text-3xl font-bold border rounded-2xl p-8 m-2 w-40 h-24";
+const btnStyle =
+  "px-4 py-2 rounded-xl shadow text-xl m-2 bg-gray-200";
 
 export default function DemoGames() {
   const [screen, setScreen] = useState("menu");
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-4">
       {screen === "menu" && <Menu setScreen={setScreen} />}
-      {screen === "logic" && <ColorLogicGame setScreen={setScreen} />}
+      {screen === "flex" && <ColorLogicGame setScreen={setScreen} />}
       {screen === "math" && <TurboMathGame setScreen={setScreen} />}
     </div>
   );
@@ -19,24 +21,22 @@ export default function DemoGames() {
 /**************** MENU ****************/
 function Menu({ setScreen }) {
   return (
-    <div className="flex flex-col items-center gap-10 text-center">
-      <h1 className="text-5xl font-bold">Skill Games Demo</h1>
+    <div className="flex flex-col items-center gap-4">
+      <h1 className="text-3xl font-bold">Skill Games Demo</h1>
 
-      <div className="flex gap-6">
-        <button
-          className="bg-gray-200 px-6 py-3 rounded-xl text-xl shadow"
-          onClick={() => setScreen("logic")}
-        >
-          Play Color Logic
-        </button>
+      <button
+        className="bg-blue-500 text-white px-4 py-2 rounded-xl"
+        onClick={() => setScreen("flex")}
+      >
+        Play Color Logic
+      </button>
 
-        <button
-          className="bg-gray-200 px-6 py-3 rounded-xl text-xl shadow"
-          onClick={() => setScreen("math")}
-        >
-          Play TurboMath
-        </button>
-      </div>
+      <button
+        className="bg-green-500 text-white px-4 py-2 rounded-xl"
+        onClick={() => setScreen("math")}
+      >
+        Play TurboMath
+      </button>
     </div>
   );
 }
@@ -47,36 +47,36 @@ const cssColors = {
   Red: "red",
   Blue: "blue",
   Green: "green",
-  Yellow: "gold",
+  Yellow: "yellow",
 };
 
 function ColorLogicGame({ setScreen }) {
   const [time, setTime] = useState(60);
   const [score, setScore] = useState(0);
-
   const [leftWord, setLeftWord] = useState("Red");
   const [rightWord, setRightWord] = useState("Blue");
   const [rightColor, setRightColor] = useState("red");
 
-  // TIMER
   useEffect(() => {
-    const t = setInterval(() => setTime((s) => Math.max(0, s - 1)), 1000);
+    const t = setInterval(
+      () => setTime((s) => Math.max(0, s - 1)),
+      1000
+    );
     return () => clearInterval(t);
   }, []);
 
-  // genera combinazioni
-  const generate = () => {
-    const left = colors[Math.floor(Math.random() * colors.length)];
-
+  const generateCards = () => {
     const makeEqual = Math.random() < 0.5;
 
+    const left = colors[Math.floor(Math.random() * colors.length)];
     let rightColorName;
 
     if (makeEqual) {
       rightColorName = left;
     } else {
       const others = colors.filter((c) => c !== left);
-      rightColorName = others[Math.floor(Math.random() * others.length)];
+      rightColorName =
+        others[Math.floor(Math.random() * others.length)];
     }
 
     const randomRightWord =
@@ -87,81 +87,104 @@ function ColorLogicGame({ setScreen }) {
     setRightColor(cssColors[rightColorName]);
   };
 
-  useEffect(() => generate(), []);
+  useEffect(() => {
+    generateCards();
+  }, []);
 
-  const evaluate = (ans) => {
-    const expectedColorName = Object.keys(cssColors).find(
-      (k) => cssColors[k] === rightColor
-    );
+  const evaluate = React.useCallback(
+    (answer) => {
+      const rightColorName = Object.keys(cssColors).find(
+        (k) => cssColors[k] === rightColor
+      );
 
-    const isEqual = leftWord === expectedColorName;
-    const correct =
-      (ans === "equal" && isEqual) ||
-      (ans === "not" && !isEqual);
+      const isEqual = leftWord === rightColorName;
+      const correct =
+        answer === (isEqual ? "equal" : "not");
 
-    setScore((s) => s + (correct ? 1 : -1));
-    generate();
-  };
+      setScore((s) => s + (correct ? 1 : -1));
+      generateCards();
+    },
+    [leftWord, rightColor]
+  );
 
-  // GAME OVER
+  // Arrow keys
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.repeat) return;
+
+      if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        evaluate("not");
+      } else if (e.code === "ArrowRight") {
+        e.preventDefault();
+        evaluate("equal");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () =>
+      window.removeEventListener("keydown", handleKeyDown);
+  }, [evaluate]);
+
   if (time === 0)
     return (
-      <div className="flex flex-col items-center gap-4 text-center">
-        <h2 className="text-3xl font-bold">Time's up!</h2>
-        <p className="text-xl">Score: {score}</p>
+      <div className="relative flex flex-col items-center gap-4">
         <button
-          className="bg-gray-200 px-4 py-2 rounded-xl shadow"
+          className="absolute top-4 right-4 bg-gray-300 px-3 py-1 rounded-lg shadow"
           onClick={() => setScreen("menu")}
         >
           Menu
         </button>
+
+        <h2 className="text-2xl font-bold">Time's up!</h2>
+        <p className="text-xl">Score: {score}</p>
       </div>
     );
 
   return (
-    <div className="flex flex-col items-center gap-8 text-center">
-
+    <div className="relative flex flex-col items-center gap-4">
+      {/* Menu */}
       <button
         onClick={() => setScreen("menu")}
-        className="absolute top-4 left-4 bg-gray-200 px-4 py-2 rounded-xl shadow"
+        className="absolute top-4 right-4 bg-gray-300 px-3 py-1 rounded-lg shadow"
       >
         Menu
       </button>
 
-      <h2 className="text-4xl font-bold">Color Logic</h2>
+      <h2 className="text-2xl font-bold">Color Logic</h2>
+      <p className="text-lg font-bold">{time}s</p>
+      <p className="text-lg">Score: {score}</p>
 
-      <p className="text-xl">{time}s</p>
-      <p className="text-xl">Score: {score}</p>
-
-      <div className="flex gap-10 mt-4">
-        <div className={boxStyle}>
-          <span style={{ color: cssColors[leftWord] }}>{leftWord}</span>
-        </div>
-
-        <div className={boxStyle}>
-          <span style={{ color: rightColor }}>{rightWord}</span>
+      <div className="flex gap-10 items-center mt-4">
+        <div className={cardStyle}>{leftWord}</div>
+        <div
+          className={cardStyle}
+          style={{ color: rightColor }}
+        >
+          {rightWord}
         </div>
       </div>
 
-      <div className="flex gap-10 mt-4">
+      <div className="flex gap-4 mt-4">
         <button
-          className="bg-gray-200 px-8 py-4 rounded-xl text-xl shadow"
+          className={btnStyle}
           onClick={() => evaluate("not")}
         >
-          Not Equal
+          ⟵ Not Equal
         </button>
 
         <button
-          className="bg-gray-200 px-8 py-4 rounded-xl text-xl shadow"
+          className={btnStyle}
           onClick={() => evaluate("equal")}
         >
-          Equal
+          Equal ⟶
         </button>
       </div>
     </div>
   );
 }
 
+/**************** TURBOMATH ****************/ 
 /**************** TURBOMATH ****************/ 
 function generateOperation() {
   const ops = ["+", "-", "*", "/"];
@@ -209,53 +232,57 @@ function TurboMathGame({ setScreen }) {
   const [task, setTask] = useState(generateOperation());
   const [input, setInput] = useState("");
 
-  // TIMER
+  // Timer
   useEffect(() => {
     const t = setInterval(() => setTime((s) => Math.max(0, s - 1)), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // Gestisce inserimento risposta
-  useEffect(() => {
-    if (input === "") return;
-
-    // Se è corretto → avanza automaticamente
-    if (Number(input) === task.result) {
-      setScore((s) => s + 1);
-      setTask(generateOperation());
-      setInput(""); // reset input
-    }
-    // Se è sbagliato → NON fa nulla, resta sulla stessa operazione
-  }, [input, task]);
-
+  // Submit manuale
   const submit = () => {
-    if (Number(input) === task.result) {
+    const correctResult = task.result;
+
+    if (input !== "" && Number(input) === correctResult) {
       setScore((s) => s + 1);
       setTask(generateOperation());
     }
+
     setInput("");
   };
 
+  // AUTO-SUBMIT che NON interferisce con la digitazione
+  useEffect(() => {
+    if (input === "") return;
+    if (Number(input) === task.result) {
+      submit();
+    }
+  }, [input, task]);
+
+
+
+  // Fine tempo
   if (time === 0)
     return (
-      <div className="flex flex-col items-center gap-4 text-center">
-        <h2 className="text-3xl font-bold">Time's up!</h2>
-        <p className="text-xl">Score: {score}</p>
+      <div className="relative flex flex-col items-center gap-4">
         <button
-          className="bg-gray-200 px-4 py-2 rounded-xl shadow"
+          className="absolute top-4 right-4 bg-gray-300 px-3 py-1 rounded-lg shadow"
           onClick={() => setScreen("menu")}
         >
           Menu
         </button>
+        <h2 className="text-2xl font-bold">Time's up!</h2>
+        <p className="text-xl">Score: {score}</p>
       </div>
     );
 
+
+
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="relative flex flex-col items-center gap-4">
 
       <button
         onClick={() => setScreen("menu")}
-        className="absolute top-4 right-4 bg-gray-200 px-3 py-1 rounded-xl shadow"
+        className="absolute top-4 right-4 bg-gray-300 px-3 py-1 rounded-lg shadow"
       >
         Menu
       </button>
@@ -275,13 +302,13 @@ function TurboMathGame({ setScreen }) {
         value={input}
         onChange={(e) => {
           const v = e.target.value;
-          if (/^-?\d*$/.test(v)) setInput(v);
+          if (/^-?\d*$/.test(v)) {
+            setInput(v); // accetta solo numeri o "-"
+          }
         }}
         onKeyDown={(e) => e.key === "Enter" && submit()}
       />
+
     </div>
   );
 }
-
-
-
