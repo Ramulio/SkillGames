@@ -162,7 +162,7 @@ function ColorLogicGame({ setScreen }) {
   );
 }
 
-/**************** TURBOMATH ****************/
+/**************** TURBOMATH ****************/ 
 function generateOperation() {
   const ops = ["+", "-", "*", "/"];
   const op = ops[Math.floor(Math.random() * ops.length)];
@@ -178,6 +178,7 @@ function generateOperation() {
       break;
 
     case "-":
+      // risultato tra -1 e -99
       result = -(Math.floor(Math.random() * 99) + 1);
       a = Math.floor(Math.random() * 500) + 100;
       b = a - result;
@@ -200,31 +201,44 @@ function generateOperation() {
   return { a, b, op, result };
 }
 
+
+
 function TurboMathGame({ setScreen }) {
   const [time, setTime] = useState(120);
   const [score, setScore] = useState(0);
   const [task, setTask] = useState(generateOperation());
   const [input, setInput] = useState("");
 
+  // TIMER
   useEffect(() => {
     const t = setInterval(() => setTime((s) => Math.max(0, s - 1)), 1000);
     return () => clearInterval(t);
   }, []);
 
-  const submit = () => {
-    if (input.trim() === "") return;
+  // Gestisce inserimento risposta
+  useEffect(() => {
+    if (input === "") return;
 
+    // Se è corretto → avanza automaticamente
+    if (Number(input) === task.result) {
+      setScore((s) => s + 1);
+      setTask(generateOperation());
+      setInput(""); // reset input
+    }
+    // Se è sbagliato → NON fa nulla, resta sulla stessa operazione
+  }, [input, task]);
+
+  const submit = () => {
     if (Number(input) === task.result) {
       setScore((s) => s + 1);
       setTask(generateOperation());
     }
-
     setInput("");
   };
 
   if (time === 0)
     return (
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center gap-4 text-center">
         <h2 className="text-3xl font-bold">Time's up!</h2>
         <p className="text-xl">Score: {score}</p>
         <button
@@ -268,4 +282,6 @@ function TurboMathGame({ setScreen }) {
     </div>
   );
 }
+
+
 
